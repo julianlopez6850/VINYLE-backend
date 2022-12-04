@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const { Users } = require("../models");
 const bcrypt = require("bcrypt");
+const { createToken, validateToken } = require("../jsonWebTokens");
 
 // Registration
 router.post("/register", async (req, res) => {
@@ -45,8 +46,19 @@ router.post("/login", async (req, res) => {
 		if (!match)
       return res.status(400).json({ error: "Wrong Username and Password Combination" });
 
-		res.status(200).json({ success: "Login successful." });
+		const accessToken = createToken(userFound);
+		
+		res.cookie("access-token", accessToken, {
+			maxAge: 1000 * 60 * 60 * 24 * 7,
+			httpOnly: false
+		})
+
+		res.status(200).json({ success: "Login successful.", accessToken: accessToken });
 	});
+});
+
+router.get("/profile", validateToken, (req, res) => {
+	res.status(200).json({ success: "User authenticated.", username: req.username })
 });
 
 module.exports = router;

@@ -1,13 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const { GamesPlayed } = require('../models');
+const { validateToken } = require("../jsonWebTokens");
 
 router.get("/", async (req, res) => {
 	const listOfGamesPlayed = await GamesPlayed.findAll();
 	res.json(listOfGamesPlayed);
 });
 
-router.post("/", async (req, res) => {
+router.post("/", validateToken, async (req, res) => {
 	try {
 		const newGame = req.body;
 		await GamesPlayed.create(newGame);
