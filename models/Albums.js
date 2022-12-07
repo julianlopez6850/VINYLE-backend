@@ -1,11 +1,15 @@
 module.exports = (sequelize, DataTypes) => {
 
-	const AlbumInfo = sequelize.define('AlbumInfo', {
+	const Albums = sequelize.define('Albums', {
 		albumID: {
 			type: DataTypes.STRING,
 			allowNull: false,
 		},
 		albumName: {
+			type: DataTypes.STRING,
+			allowNull: false,
+		},
+		albumArt: {
 			type: DataTypes.STRING,
 			allowNull: false,
 		},
@@ -23,5 +27,5 @@ module.exports = (sequelize, DataTypes) => {
 		},
 	})
 
-	return AlbumInfo;
+	return Albums;
 };

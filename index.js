@@ -14,8 +14,8 @@ app.use(cookieParser());
 const db = require('./models');
 
 //Routers
-const albumInfoRouter = require("./routes/AlbumInfo");
-app.use("/albuminfo", albumInfoRouter);
+const albumsRouter = require("./routes/Albums");
+app.use("/albums", albumsRouter);
 const gamedPlayedRouter = require("./routes/GamesPlayed");
 app.use("/gamesplayed", gamedPlayedRouter);
 const usersRouter = require("./routes/Users");

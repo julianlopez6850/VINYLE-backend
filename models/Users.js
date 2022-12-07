@@ -10,12 +10,12 @@ module.exports = (sequelize, DataTypes) => {
 			allowNull: false,
 		},
 	});
-
-	// Users.associate = (models) => {
-	// 	Users.hasMany(models.GamesPlayed, {
-	// 		onDelete: "cascade",
-	// 	});
-	// };
+/*
+	Users.associate = (models) => {
+		Users.hasMany(models.GamesPlayed, {
+			onDelete: "cascade",
+		});
+	};*/
 
 	return Users;
 };
