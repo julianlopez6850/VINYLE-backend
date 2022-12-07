@@ -35,11 +35,21 @@ router.post("/", async (req, res) => {
 router.get("/", async (req, res) => {
 	const { id } = req.query;
 
-	var listOfAlbums = await Albums.findAll();
-	var albumID = parseInt(id) % listOfAlbums.length + 1;
-	const album = await Albums.findOne({ where: { id: albumID } });
-
-	return res.status(200).json({ id: albumID, album: album});
+	if(isNaN(id))
+	{
+		await Albums.findOne({ where: { albumID: id } })
+			.then((response) => {
+				if(response)
+					return res.status(200).json({ album: response })
+				else
+					return res.status(400).json({ error: "Bad album ID." })
+			});
+	}
+	else
+	{
+		const album = await getAlbumFromID(id);
+		return res.status(200).json({ album: album });
+	}
 });
 
 router.get("/all", async (req, res) => {
@@ -79,10 +89,7 @@ router.get("/art", async (req, res) => {
 	var size = Math.ceil(300.0 * cropPercentage);
 	var fromTop = Math.floor(300.0 - size);
 
-	var listOfAlbums = await Albums.findAll();
-	var albumID = parseInt(id) % listOfAlbums.length + 1;
 	const album = await getAlbumFromID(id);
-
 
 	console.log(album.albumArt)
 	const url = album.albumArt
@@ -106,9 +113,7 @@ router.get("/art", async (req, res) => {
 router.get("/compare", async (req, res) => {
 	const { id, guess_albumID, guess_artists, guess_genres, guess_releaseYear } = req.query;
 
-	var listOfAlbums = await Albums.findAll();
-	var albumID = parseInt(id) % listOfAlbums.length + 1;
-	const album = await Albums.findOne({ where: { id: albumID } });
+	const album = await getAlbumFromID(id);
 
 	var correctGuess = (album.albumID == guess_albumID)
 	var correctArtist = (album.artists == guess_artists)
@@ -116,8 +121,13 @@ router.get("/compare", async (req, res) => {
 	console.log(guess_artists)
 	var correctGenres = (album.genres == guess_genres)
 	var correctReleaseYear = (album.releaseYear == guess_releaseYear)
+	var releaseYearDirection = "";
+	if(album.releaseYear > guess_releaseYear)
+		releaseYearDirection = "later";
+	else if(album.releaseYear < guess_releaseYear)
+	releaseYearDirection = "earlier";
 
-	return res.status(200).json({ correct: correctGuess, correctArtist: correctArtist, correctGenres: correctGenres, correctReleaseYear: correctReleaseYear });
+	return res.status(200).json({ correct: correctGuess, correctArtist: correctArtist, correctGenres: correctGenres, correctReleaseYear: correctReleaseYear, releaseYearDirection: releaseYearDirection });
 });
 
 module.exports = router;
