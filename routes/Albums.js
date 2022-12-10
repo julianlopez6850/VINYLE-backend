@@ -6,6 +6,7 @@ const sharp = require('sharp');
 var path = require('path')
 const axios = require('axios')
 
+// This method is used to get choose an answer album using a random integer.
 const getAlbumFromID = async (id) => {
 	var listOfAlbums = await Albums.findAll();
 	var albumID = parseInt(id) % listOfAlbums.length + 1;
@@ -13,6 +14,7 @@ const getAlbumFromID = async (id) => {
 	return album;
 }
 
+// Post a new album to the albums table
 router.post("/", async (req, res) => {
 	const album = req.body;
 	try {
@@ -32,6 +34,7 @@ router.post("/", async (req, res) => {
 	return res.status(200).json(album);
 });
 
+// Get album information by an album ID.
 router.get("/", async (req, res) => {
 	const { id } = req.query;
 
@@ -52,16 +55,19 @@ router.get("/", async (req, res) => {
 	}
 });
 
+// Get ALL albums in the database.
 router.get("/all", async (req, res) => {
 	const listOfAlbums = await Albums.findAll();
 	res.status(200).json(listOfAlbums);
 });
 
+// Get the album art of an album specified by ID, and cropped based on guess #
 router.get("/art", async (req, res) => {
 	const { id, guessNum } = req.query;
 
 	var cropPercentage = 1;
 
+	// change the crop percentage of the album art based on the guessNum passed through the request.
 	switch (guessNum) {
 		case '0':
 			cropPercentage = 1/10.0;
@@ -94,6 +100,7 @@ router.get("/art", async (req, res) => {
 	console.log(album.albumArt)
 	const url = album.albumArt
 
+	// the following allows for the answer album to be cropped, saved into a file, and then sent back as a file through the response.
 	const response = await axios.get(url,  { responseType: 'arraybuffer' })
 	const buffer = Buffer.from(response.data, "utf-8")
 	await sharp(buffer)
@@ -106,28 +113,33 @@ router.get("/art", async (req, res) => {
 	.catch(function(err) {
 		console.log(err)
 	})
+
 	console.log("Art sent to client.");
 	res.status(200).sendFile('albumArt/answer.png', { root: path.join(__dirname, '..')})
 })
 
+// Compare the guess album with the answer album.
 router.get("/compare", async (req, res) => {
-	const { id, guess_albumID, guess_artists, guess_genres, guess_releaseYear } = req.query;
+	const { id, guess_albumID } = req.query;
 
-	const album = await getAlbumFromID(id);
+	const answerAlbum = await getAlbumFromID(id);
 
-	var correctGuess = (album.albumID == guess_albumID)
-	var correctArtist = (album.artists == guess_artists)
-	console.log(album.artists)
-	console.log(guess_artists)
-	var correctGenres = (album.genres == guess_genres)
-	var correctReleaseYear = (album.releaseYear == guess_releaseYear)
+	var correctGuess = (answerAlbum.albumID == guess_albumID)
+
+	const guessAlbum = await Albums.findOne({ where: { albumID: guess_albumID } })
+
+	console.log(guessAlbum);
+
+	var correctArtists = (answerAlbum.artists == guessAlbum.artists)
+	var correctGenres = (answerAlbum.genres == guessAlbum.genres)
+	var correctReleaseYear = (answerAlbum.releaseYear == guessAlbum.releaseYear)
 	var releaseYearDirection = "";
-	if(album.releaseYear > guess_releaseYear)
+	if(answerAlbum.releaseYear > guessAlbum.releaseYear)
 		releaseYearDirection = "later";
-	else if(album.releaseYear < guess_releaseYear)
-	releaseYearDirection = "earlier";
+	else if(answerAlbum.releaseYear < guessAlbum.releaseYear)
+		releaseYearDirection = "earlier";
 
-	return res.status(200).json({ correct: correctGuess, correctArtist: correctArtist, correctGenres: correctGenres, correctReleaseYear: correctReleaseYear, releaseYearDirection: releaseYearDirection });
+	return res.status(200).json({ correct: correctGuess, correctArtists: correctArtists, correctGenres: correctGenres, correctReleaseYear: correctReleaseYear, releaseYearDirection: releaseYearDirection });
 });
 
 module.exports = router;

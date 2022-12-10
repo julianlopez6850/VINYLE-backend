@@ -23,6 +23,7 @@ router.post("/register", async (req, res) => {
 	}
 });
 
+// Check if a username is available.
 router.get("/isUsernameAvailable", async (req, res) => {
 	console.log(req.query);
 	const { username } = req.query;
@@ -50,13 +51,23 @@ router.post("/login", async (req, res) => {
 		
 		res.cookie("access-token", accessToken, {
 			maxAge: 1000 * 60 * 60 * 24 * 7,
-			httpOnly: false
+			httpOnly: true
 		})
 
 		res.status(200).json({ success: "Login successful.", accessToken: accessToken });
 	});
 });
 
+// Logout
+router.post("/logout", async (req, res) => {
+	res.cookie("access-token", 'expired', {
+		maxAge: 1000,
+		httpOnly: true
+	})
+	return res.status(200).json({ success: "User logged out successfully." })
+})
+
+// Check if a user is logged in, and who that user is.
 router.get("/profile", validateToken, (req, res) => {
 	res.status(200).json({ success: "User authenticated.", username: req.username })
 });
