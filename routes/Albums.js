@@ -12,7 +12,7 @@ const getAlbumFromID = async (id) => {
 	var albumID = parseInt(id) % listOfAlbums.length + 1;
 	const album = await Albums.findOne({ where: { id: albumID } });
 	return album;
-}
+};
 
 // Post a new album to the albums table
 router.post("/", async (req, res) => {
@@ -32,6 +32,18 @@ router.post("/", async (req, res) => {
 		return res.status(400).json(err)
 	}
 	return res.status(200).json(album);
+});
+
+// Delete an existing album in the album table
+router.delete("/",  async (req, res) => {
+	const { id } = req.query;
+
+	try {
+		await Albums.destroy({ where: { albumID: id }})
+	} catch {
+		return res.status(400).json({ error: "albumID cannot be null"})
+	}
+	return res.status(200).json( "Album " + id + " was successfully deleted." );
 });
 
 // Get album information by an album ID.
@@ -94,8 +106,14 @@ router.get("/art", async (req, res) => {
 
 	var size = Math.ceil(300.0 * cropPercentage);
 	var fromTop = Math.floor(300.0 - size);
-
-	const album = await getAlbumFromID(id);
+	
+	var album;
+	if(isNaN(id))
+	{
+		album = await Albums.findOne({ where: { albumID: id } })
+	} else {
+		album	= await getAlbumFromID(id);
+	}
 
 	console.log(album.albumArt)
 	const url = album.albumArt
@@ -116,7 +134,7 @@ router.get("/art", async (req, res) => {
 
 	console.log("Art sent to client.");
 	res.status(200).sendFile('albumArt/answer.png', { root: path.join(__dirname, '..')})
-})
+});
 
 // Compare the guess album with the answer album.
 router.get("/compare", async (req, res) => {

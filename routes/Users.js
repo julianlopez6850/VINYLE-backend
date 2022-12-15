@@ -65,7 +65,7 @@ router.post("/logout", async (req, res) => {
 		httpOnly: true
 	})
 	return res.status(200).json({ success: "User logged out successfully." })
-})
+});
 
 // Check if a user is logged in, and who that user is.
 router.get("/profile", validateToken, (req, res) => {
