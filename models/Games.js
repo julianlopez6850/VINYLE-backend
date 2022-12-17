@@ -1,6 +1,6 @@
 module.exports = (sequelize, DataTypes) => {
 
-	const GamesPlayed = sequelize.define('GamesPlayed', {
+	const Games = sequelize.define('Games', {
 		username: {
 			type: DataTypes.STRING,
 			allowNull: false,
@@ -27,5 +27,5 @@ module.exports = (sequelize, DataTypes) => {
 		},
 	})
 
-	return GamesPlayed;
+	return Games;
 };

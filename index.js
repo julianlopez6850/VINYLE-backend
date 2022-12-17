@@ -16,8 +16,8 @@ const db = require('./models');
 //Routers
 const albumsRouter = require("./routes/Albums");
 app.use("/albums", albumsRouter);
-const gamedPlayedRouter = require("./routes/GamesPlayed");
-app.use("/gamesplayed", gamedPlayedRouter);
+const gamesRouter = require("./routes/Games");
+app.use("/games", gamesRouter);
 const usersRouter = require("./routes/Users");
 app.use("/auth", usersRouter);
 
