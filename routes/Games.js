@@ -22,13 +22,21 @@ router.post("/", validateToken, async (req, res) => {
 });
 
 // get games played by a specified user.
-router.get("/user", async (req, res) => {
+router.get("/user/all", async (req, res) => {
 	const { username } = req.query;
-	console.log(username)
 	const listOfGames = await Games.findAll({ where: { username: username } });
-	console.log(listOfGames[0])
 	if(listOfGames[0] != undefined) {
-		console.log(listOfGames)
+		res.status(200).json({ games: listOfGames });
+	} else {
+		res.status(200).json({ error: "No games found for user " + username })
+	}
+});
+
+// get games played by a specified user & gamemode.
+router.get("/user/mode", async (req, res) => {
+	const { username, mode } = req.query;
+	const listOfGames = await Games.findAll({ where: { username: username, mode: mode } });
+	if(listOfGames[0] != undefined) {
 		res.status(200).json({ games: listOfGames });
 	} else {
 		res.status(200).json({ error: "No games found for user " + username })
