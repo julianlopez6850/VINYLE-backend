@@ -7,6 +7,10 @@ const { createToken, validateToken } = require("../jsonWebTokens");
 // Registration
 router.post("/register", async (req, res) => {
 	const { username, password } = req.body;
+	if(username == undefined)
+		return res.status(400).json({ error: "Username cannot be undefined" });
+	if(password == undefined)
+		return res.status(400).json({ error: "Password cannot be undefined" });
 
 	const isUsernameTaken = await Users.findOne({ where: { username: username } });
 
