@@ -59,4 +59,22 @@ router.get("/", async (req, res) => {
 	}
 });
 
+// Get an album ID of a specific date's daily game.
+router.get("/id", async (req, res) => {
+	const { date } = req.query;
+	const existingDaily = await Daily.findOne({ where: { date: date } });
+	if(existingDaily) {
+
+		var album = await Albums.findOne({ where: { albumID: existingDaily.albumID } });
+		var id = album.id;
+		var listOfAlbums = await Albums.findAll();
+		var rand = Math.floor(Math.random() * 100);
+		id = id * ((listOfAlbums.length) * rand) + id - 1;
+
+		res.status(200).json({ albumID: id });
+	} else {
+		res.status(200).json({ error: "No daily game found for date " + date })
+	}
+});
+
 module.exports = router;
