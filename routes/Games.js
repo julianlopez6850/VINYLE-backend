@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { Games } = require('../models');
+const { Games, Albums } = require('../models');
 const { validateToken } = require("../jsonWebTokens");
 
 // Get all of the games played
@@ -21,25 +21,27 @@ router.post("/", validateToken, async (req, res) => {
 	}
 });
 
-// get games played by a specified user.
-router.get("/user/all", async (req, res) => {
-	const { username } = req.query;
-	const listOfGames = await Games.findAll({ where: { username: username } });
-	if(listOfGames[0] != undefined) {
-		res.status(200).json({ games: listOfGames });
-	} else {
-		res.status(200).json({ error: "No games found for user " + username })
-	}
-});
-
-// get games played by a specified user & gamemode.
-router.get("/user/mode", async (req, res) => {
+// get games played by a specified user & gamemode. 
+// (if mode is not specified in request, get all modes)
+router.get("/user", validateToken, async (req, res) => {
 	const { username, mode } = req.query;
-	const listOfGames = await Games.findAll({ where: { username: username, mode: mode } });
+
+	if(username === undefined)
+		return res.status(400).json({ error: "Username cannot be undefined" });
+
+	const withMode = { username: username, mode: mode };
+	const withoutMode = { username: username }
+	const listOfGames = await Games.findAll({ where: (mode === undefined) ? withoutMode : withMode });
+
+	for(const game of listOfGames) {
+		const album = await Albums.findOne({ where: { albumID: game.dataValues.albumID } })
+		game.dataValues.album = album ;
+	}
+	
 	if(listOfGames[0] != undefined) {
 		res.status(200).json({ games: listOfGames });
 	} else {
-		res.status(200).json({ error: "No games found for user " + username })
+		res.status(200).json({ message: "No games found for user: " + username + `${(mode) ? `, mode: ${mode}` : ``}` })
 	}
 });
 
