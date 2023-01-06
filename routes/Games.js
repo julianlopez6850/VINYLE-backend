@@ -87,4 +87,22 @@ router.get("/user/stats", validateToken, async (req, res) => {
 	}});
 });
 
+// get games played by a user in a specified mode and date, if any.
+router.get("/user/hasGame", validateToken, async (req, res) => {
+	const { username, mode, date } = req.query;
+
+	if(username === undefined)
+		return res.status(400).json({ error: "Username cannot be undefined" });
+	if(mode === undefined)
+		return res.status(400).json({ error: "Mode cannot be undefined" });
+	if(date === undefined)
+		return res.status(400).json({ error: "Date cannot be undefined" });
+	const listOfGames = await Games.findAll({ where: { username: username, date: date, mode: mode } });
+	
+	if(listOfGames[0] === undefined)
+		return res.status(200).json({ value: "false", message: `No games found for { user: ${username}, mode: ${mode}, date: ${date} }` })
+	else
+		return res.status(200).json({ value: "true", games: listOfGames })
+})
+
 module.exports = router;
