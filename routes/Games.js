@@ -100,9 +100,9 @@ router.get("/user/hasGame", validateToken, async (req, res) => {
 	const listOfGames = await Games.findAll({ where: { username: username, date: date, mode: mode } });
 	
 	if(listOfGames[0] === undefined)
-		return res.status(200).json({ value: "false", message: `No games found for { user: ${username}, mode: ${mode}, date: ${date} }` })
+		return res.status(200).json({ value: false, message: `No games found for { user: ${username}, mode: ${mode}, date: ${date} }` })
 	else
-		return res.status(200).json({ value: "true", games: listOfGames })
+		return res.status(200).json({ value: true, games: listOfGames })
 })
 
 module.exports = router;
