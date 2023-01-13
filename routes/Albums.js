@@ -6,7 +6,7 @@ const sharp = require('sharp');
 var path = require('path')
 const axios = require('axios')
 
-// This method is used to get choose an answer album using a random integer.
+// This method is used to choose an answer album using a random integer.
 const getAlbumFromID = async (id) => {
 	var listOfAlbums = await Albums.findAll();
 	var albumID = parseInt(id) % listOfAlbums.length + 1;
@@ -67,13 +67,19 @@ router.get("/", async (req, res) => {
 	}
 });
 
-// Get ALL albums in the database.
+// Get ALL albums in the database. Return in alphabetical order of artists, then albums
 router.get("/all", async (req, res) => {
-	const listOfAlbums = await Albums.findAll();
+	const listOfAlbums = await Albums.findAll({
+		order: [
+			['artists', 'ASC'], 
+			['albumName', 'ASC']
+		]
+	});
 	res.status(200).json(listOfAlbums);
 });
 
 // Get the album art of an album specified by ID, and cropped based on guess #
+// (IMAGES IN ALBUMS TABLE MUST BE SAVED AS 300x300 for this request to work)
 router.get("/art", async (req, res) => {
 	const { id, guessNum } = req.query;
 
