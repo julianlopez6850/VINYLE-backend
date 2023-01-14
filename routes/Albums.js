@@ -165,7 +165,14 @@ router.get("/compare", async (req, res) => {
 		})
 	}
 	var correctGenres = (answerAlbum.genres == guessAlbum.genres)
-	var correctReleaseYear = (answerAlbum.releaseYear == guessAlbum.releaseYear)
+	var correctReleaseYear = ''
+	if(answerAlbum.releaseYear == guessAlbum.releaseYear)
+		correctReleaseYear = "correct";
+	else {
+		correctReleaseYear = false;
+		if(Math.floor(answerAlbum.releaseYear / 10) === Math.floor(guessAlbum.releaseYear / 10))
+			correctReleaseYear = "decade"
+	}
 	var releaseYearDirection = "";
 	if(answerAlbum.releaseYear > guessAlbum.releaseYear)
 		releaseYearDirection = "later";
