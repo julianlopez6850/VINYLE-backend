@@ -154,7 +154,7 @@ router.get("/compare", async (req, res) => {
 
 	console.log(guessAlbum);
 
-	var correctArtists = (answerAlbum.artists == guessAlbum.artists)
+	var correctArtists = (JSON.stringify(answerAlbum.artists) == JSON.stringify(guessAlbum.artists))
 	var correctGenres = (answerAlbum.genres == guessAlbum.genres)
 	var correctReleaseYear = (answerAlbum.releaseYear == guessAlbum.releaseYear)
 	var releaseYearDirection = "";
