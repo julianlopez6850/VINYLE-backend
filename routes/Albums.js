@@ -154,7 +154,16 @@ router.get("/compare", async (req, res) => {
 
 	console.log(guessAlbum);
 
-	var correctArtists = (JSON.stringify(answerAlbum.artists) == JSON.stringify(guessAlbum.artists))
+	var correctArtists = ''
+	if(JSON.stringify(answerAlbum.artists) == JSON.stringify(guessAlbum.artists))
+		correctArtists = "correct";
+	else {
+		correctArtists = false;
+		answerAlbum.artists.forEach((artist) => {
+			if(guessAlbum.artists.includes(artist))
+				correctArtists = "partial";
+		})
+	}
 	var correctGenres = (answerAlbum.genres == guessAlbum.genres)
 	var correctReleaseYear = (answerAlbum.releaseYear == guessAlbum.releaseYear)
 	var releaseYearDirection = "";
