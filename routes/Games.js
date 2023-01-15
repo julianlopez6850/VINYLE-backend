@@ -26,7 +26,7 @@ router.post("/", validateToken, async (req, res) => {
 // (if date is not specified, get games plaed on any date).
 // (if limit is not specified, get all games played that match the other params.
 router.get("/user/hasGame", validateToken, async (req, res) => {
-	const { username, mode, date, limit} = req.query;
+	const { username, mode, date, limit } = req.query;
 
 	var query = { username: username };
 
@@ -43,7 +43,13 @@ router.get("/user/hasGame", validateToken, async (req, res) => {
 	if(date !== undefined)
 		query.date = date
 
-	const listOfGames = await Games.findAll({ limit : (limit) ? parsedLimit : undefined, where: query });
+	const listOfGames = await Games.findAll({ 
+		order : [
+			['createdAt', 'DESC']
+		], 
+		limit : (limit) ? parsedLimit : undefined, 
+		where: query 
+	});
 
 	if(listOfGames[0] === undefined)
 		return res.status(200).json({ value: false, message: `No games found for { user: ${username}${(mode) ? `, mode: ${mode}` : ``}${(date) ? `, date: ${date}` : ``} }` })
