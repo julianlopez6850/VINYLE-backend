@@ -45,7 +45,7 @@ router.get("/user/hasGame", validateToken, async (req, res) => {
 
 	const listOfGames = await Games.findAll({ 
 		order : [
-			['createdAt', 'DESC']
+			['id', 'DESC']
 		], 
 		limit : (limit) ? parsedLimit : undefined, 
 		where: query 
