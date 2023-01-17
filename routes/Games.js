@@ -26,10 +26,11 @@ router.post("/", validateToken, async (req, res) => {
 // (if date is not specified, get games plaed on any date).
 // (if limit is not specified, get all games played that match the other params.
 router.get("/user/hasGame", validateToken, async (req, res) => {
-	const { username, mode, date, limit } = req.query;
+	const { username, mode, date, offset, limit } = req.query;
 
 	var query = { username: username };
 
+	const parsedOffset = parseInt(offset);
 	const parsedLimit = parseInt(limit);
 
 	if(username === undefined)
@@ -50,6 +51,7 @@ router.get("/user/hasGame", validateToken, async (req, res) => {
 			['id', 'DESC']
 		], 
 		limit : (limit) ? parsedLimit : undefined, 
+		offset: (offset) ? parsedOffset : undefined, 
 		where: query 
 	});
 
