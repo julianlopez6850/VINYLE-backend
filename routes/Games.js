@@ -43,6 +43,8 @@ router.get("/user/hasGame", validateToken, async (req, res) => {
 	if(date !== undefined)
 		query.date = date
 
+	const numGames = await Games.count({ where: query });
+
 	const listOfGames = await Games.findAll({ 
 		order : [
 			['id', 'DESC']
@@ -59,7 +61,7 @@ router.get("/user/hasGame", validateToken, async (req, res) => {
 		game.dataValues.album = album;
 	}
 
-	return res.status(200).json({ value: true, numGames: listOfGames.length, games: listOfGames })
+	return res.status(200).json({ value: true, numGames: numGames, games: listOfGames })
 });
 
 // get stats of games played by a specified user & gamemode. 
