@@ -77,4 +77,17 @@ router.get("/id", async (req, res) => {
 	}
 });
 
+// Get the number of daily games that have occured from the first daily game to a specified date, or to today's date if none specified.
+router.get("/numDays", async (req, res) => {
+	const { date } = req.query;
+	const existingDaily = await Daily.findOne({ where: { date: (date ? date : new Date().setHours(0, 0, 0, 0)) } });
+
+	if(existingDaily)
+		res.status(200).json({ days: existingDaily.id })
+	else {
+		res.status(200).json({ error: "No game occured on given day, or that day has not occured yet." })
+	}
+
+});
+
 module.exports = router;
