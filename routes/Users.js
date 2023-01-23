@@ -21,7 +21,7 @@ router.post("/register", async (req, res) => {
 			Users.create({
 				username: username,
 				password: hash,
-				settings: { darkMode: true, colorblindMode: false, difficulty: { grayscale: false, inverted: false, rotation: false, decadeHint: true } }
+				settings: { darkTheme: true, colorblindMode: false, difficulty: 0 }
 			});
 			return res.status(200).json({ success: "Successfully created new user: " + username, username: username, password: password });
 		});
