@@ -73,8 +73,9 @@ router.post("/logout", async (req, res) => {
 });
 
 // Check if a user is logged in, and who that user is.
-router.get("/profile", validateToken, (req, res) => {
-	res.status(200).json({ success: "User authenticated.", username: req.username })
+router.get("/profile", validateToken, async (req, res) => {
+	const user = await Users.findOne({ where: { username: req.username } });
+	res.status(200).json({ success: "User authenticated.", username: req.username, settings: user.settings })
 });
 
 router.put("/settings", validateToken, (req, res) => {
