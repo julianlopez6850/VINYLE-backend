@@ -9,6 +9,10 @@ module.exports = (sequelize, DataTypes) => {
 			type: DataTypes.STRING,
 			allowNull: false,
 		},
+		settings: {
+			type: DataTypes.JSON,
+			allowNull: false,
+		}
 	});
 /*
 	Users.associate = (models) => {

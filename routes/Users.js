@@ -21,6 +21,7 @@ router.post("/register", async (req, res) => {
 			Users.create({
 				username: username,
 				password: hash,
+				settings: { darkMode: true, colorblindMode: false, difficulty: { grayscale: false, inverted: false, rotation: false, decadeHint: true } }
 			});
 			return res.status(200).json({ success: "Successfully created new user: " + username, username: username, password: password });
 		});
@@ -74,6 +75,24 @@ router.post("/logout", async (req, res) => {
 // Check if a user is logged in, and who that user is.
 router.get("/profile", validateToken, (req, res) => {
 	res.status(200).json({ success: "User authenticated.", username: req.username })
+});
+
+router.put("/settings", validateToken, (req, res) => {
+	const { username, settings } = req.body;
+
+	if(username == undefined)
+		return res.status(400).json({ error: "Username cannot be undefined" });
+	if(settings == undefined)
+		return res.status(400).json({ error: "Settings cannot be undefined" });
+
+	Users.update(
+		{ settings: settings },
+		{ where: { username: username } }
+	).then(() => {
+		return res.status(200).json({ success: "User settings updated." })
+	}).catch(err => {
+		return res.status(400).json({ error: err })
+	})
 });
 
 module.exports = router;
