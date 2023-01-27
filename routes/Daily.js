@@ -31,15 +31,14 @@ router.post("/", async (req, res) => {
 			num5Guess: 0,
 			num6Guess: 0,
 			numLosses: 0,
-			WinPercent: 0,
-			avgGuesses: 0
+			winPercent: 0
 		}
 		await Albums.findAll({ order: sequelize.literal('rand()'), limit: 1 }).then((response) => {
 			data.albumID = response[0].dataValues.albumID;
 			data.albumName = response[0].dataValues.albumName;
-		})
-
-		console.log(data);
+		}).catch(function(err) {
+			console.log(err);
+		});
 
 		await Daily.create(data);
 	} catch (err) {
