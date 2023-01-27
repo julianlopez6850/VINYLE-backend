@@ -51,6 +51,24 @@ router.post("/", async (req, res) => {
 router.get("/", async (req, res) => {
 	const { date } = req.query;
 	const existingDaily = await Daily.findOne({ where: { date: date } });
+
+	var numGuessDistribution = [
+		existingDaily.num1Guess,
+		existingDaily.num2Guess,
+		existingDaily.num3Guess,
+		existingDaily.num4Guess,
+		existingDaily.num5Guess,
+		existingDaily.num6Guess
+	]
+
+	var mostFrequent = 0;
+	numGuessDistribution.forEach((item) => {
+		if(parseInt(item) > parseInt(mostFrequent))
+			mostFrequent = item;
+	})
+
+	existingDaily.dataValues.mostFrequent = mostFrequent;
+
 	if(existingDaily) {
 		res.status(200).json({ game: existingDaily });
 	} else {
