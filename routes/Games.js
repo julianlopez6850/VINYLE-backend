@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { Games, Albums } = require('../models');
+const { Games, Albums, Daily } = require('../models');
 const { validateToken } = require("../jsonWebTokens");
+const sequelize = require('sequelize');
 
 // Get all of the games played
 router.get("/all", async (req, res) => {
@@ -11,13 +12,33 @@ router.get("/all", async (req, res) => {
 
 // Post a new game to the games table.
 router.post("/", validateToken, async (req, res) => {
+	if(req.body.mode === "classic") {
+		await Daily.update(
+			{
+				numPlayed: sequelize.literal('numPlayed + 1'), 
+				numWins: (req.body.win) ? sequelize.literal('numWins + 1') : sequelize.literal('numWins'), 
+				numLosses: (req.body.win) ? sequelize.literal('numLosses') : sequelize.literal('numLosses + 1'), 
+				num1Guess: (req.body.numGuesses === 1) ? sequelize.literal('num1Guess + 1') : sequelize.literal('num1Guess'), 
+				num2Guess: (req.body.numGuesses === 2) ? sequelize.literal('num2Guess + 1') : sequelize.literal('num2Guess'), 
+				num3Guess: (req.body.numGuesses === 3) ? sequelize.literal('num3Guess + 1') : sequelize.literal('num3Guess'), 
+				num4Guess: (req.body.numGuesses === 4) ? sequelize.literal('num4Guess + 1') : sequelize.literal('num4Guess'), 
+				num5Guess: (req.body.numGuesses === 5) ? sequelize.literal('num5Guess + 1') : sequelize.literal('num5Guess'), 
+				num6Guess: (req.body.numGuesses === 6) ? sequelize.literal('num6Guess + 1') : sequelize.literal('num6Guess'), 
+				winPercent: sequelize.literal('numWins / numPlayed * 100'), 
+			},
+			{ where: { date: req.body.date } }
+		).catch(err => {
+			return res.status(400).json({ error: err })
+		})
+	}
+
 	try {
 		const newGame = req.body;
 		await Games.create(newGame);
-		res.json({ success: newGame });
+		return res.status(200).json({ message: "Successfully added new game.", game: newGame });
 	} catch (err) {
-		res.json({ error: err })
 		console.log(err);
+		return res.status(400).json({ error: err })
 	}
 });
 

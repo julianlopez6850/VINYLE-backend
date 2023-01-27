@@ -49,11 +49,7 @@ module.exports = (sequelize, DataTypes) => {
 			type: DataTypes.NUMERIC,
 			allowNull: false,
 		},
-		WinPercent: {
-			type: DataTypes.NUMERIC,
-			allowNull: false,
-		},
-		avgGuesses: {
+		winPercent: {
 			type: DataTypes.NUMERIC,
 			allowNull: false,
 		},
