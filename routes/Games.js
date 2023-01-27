@@ -112,7 +112,8 @@ router.get("/user/stats", validateToken, async (req, res) => {
 			numGuessDistribution[listOfGames[i].numGuesses - 1]++;
 		}
 	}
-	var mostFrequent = 0;
+	var numLosses = numGames - numWins;
+	var mostFrequent = numLosses;
 	numGuessDistribution.forEach((item, index) => {
 		numGuesses += item * (index + 1);
 		if(item > mostFrequent)
@@ -122,7 +123,7 @@ router.get("/user/stats", validateToken, async (req, res) => {
 	res.status(200).json({ game: {
 		numGames: numGames,
 		numWins: numWins,
-		numLosses: numGames - numWins,
+		numLosses: numLosses,
 		winPercent: parseFloat((numWins / numGames * 100).toFixed()),
 		guessDistribution: numGuessDistribution,
 		avgGuessesPerWin: parseFloat((numGuesses / numWins).toFixed(2)),

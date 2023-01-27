@@ -61,7 +61,7 @@ router.get("/", async (req, res) => {
 		existingDaily.num6Guess
 	]
 
-	var mostFrequent = 0;
+	var mostFrequent = existingDaily.numLosses;
 	numGuessDistribution.forEach((item) => {
 		if(parseInt(item) > parseInt(mostFrequent))
 			mostFrequent = item;
