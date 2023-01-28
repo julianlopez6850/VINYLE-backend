@@ -52,24 +52,24 @@ router.get("/", async (req, res) => {
 	const { date } = req.query;
 	const existingDaily = await Daily.findOne({ where: { date: date } });
 
-	var numGuessDistribution = [
-		existingDaily.num1Guess,
-		existingDaily.num2Guess,
-		existingDaily.num3Guess,
-		existingDaily.num4Guess,
-		existingDaily.num5Guess,
-		existingDaily.num6Guess
-	]
-
-	var mostFrequent = existingDaily.numLosses;
-	numGuessDistribution.forEach((item) => {
-		if(parseInt(item) > parseInt(mostFrequent))
-			mostFrequent = item;
-	})
-
-	existingDaily.dataValues.mostFrequent = mostFrequent;
-
 	if(existingDaily) {
+		var numGuessDistribution = [
+			existingDaily.num1Guess,
+			existingDaily.num2Guess,
+			existingDaily.num3Guess,
+			existingDaily.num4Guess,
+			existingDaily.num5Guess,
+			existingDaily.num6Guess
+		]
+
+		var mostFrequent = existingDaily.numLosses;
+		numGuessDistribution.forEach((item) => {
+			if(parseInt(item) > parseInt(mostFrequent))
+				mostFrequent = item;
+		})
+
+		existingDaily.dataValues.mostFrequent = mostFrequent;
+		
 		res.status(200).json({ game: existingDaily });
 	} else {
 		res.status(200).json({ error: "No daily game found for date " + date })
