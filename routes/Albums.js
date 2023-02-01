@@ -3,8 +3,9 @@ const { json } = require('sequelize');
 const router = express.Router();
 const { Albums } = require('../models');
 const sharp = require('sharp');
-var path = require('path')
-const axios = require('axios')
+var path = require('path');
+const axios = require('axios');
+var FormData = require('form-data');
 
 // This method is used to choose an answer album using a random integer.
 const getAlbumFromID = async (id) => {
@@ -27,11 +28,91 @@ router.post("/", async (req, res) => {
 		return res.status(400).json({ error: "That album is already stored in the albums table" })
 	}
 	try {
+		// cycle through possible guessNum values
+		for(var i = 0; i < 6; i++) {
+
+			// change the crop percentage of the album art based on guessNum.
+			var cropPercentage = 1;
+			switch (i) {
+				case 0:
+					cropPercentage = 1/10.0;
+					break;
+				case 1:
+					cropPercentage = 1/8.0;
+					break;
+				case 2:
+					cropPercentage = 1/6.5;
+					break;
+				case 3:
+					cropPercentage = 1/5.0;
+					break;
+				case 4:
+					cropPercentage = 1/3.5;
+					break;
+				case 5:
+					cropPercentage = 1/2.0;
+					break;
+			}
+
+			var size = Math.ceil(300.0 * cropPercentage);
+			var fromTop = Math.floor(300.0 - size);
+		
+			console.log("Album Art: " + album.albumArt + ", numGuesses : " + i);
+			const url = album.albumArt
+		
+			// the following allows for the answer album to be cropped, saved into a buffer, stored onto Imgur, and have the resulting link saved into the albums table.
+			const response = await axios.get(url,  { responseType: 'arraybuffer' })
+			.catch(function (error) {
+				console.log(error);
+				return res.status(400).json(error);
+			});
+			if(!response.data) {
+				return;
+			}
+			const buffer = Buffer.from(response.data, "utf-8")
+			await sharp(buffer)
+			.extract({ width: size, height: size, left: 0, top: fromTop})
+			.resize(300, 300)
+			.toBuffer()
+			.then(async (response) => {
+				console.log("Album Art cropped successfully.");
+							var data = new FormData();
+							await data.append('image', response);
+
+							console.log(data)
+
+							var axiosConfig = {
+								method: 'post',
+								url: 'https://api.imgur.com/3/image',
+								headers: { 
+									'Authorization': `Client-ID ${process.env.IMGUR_CLIENT_ID}`, 
+									...data.getHeaders()
+								},
+								data : data
+							};
+
+							await axios(axiosConfig)
+							.then(function (response) {
+								console.log(`SUCCESSFULLY POSTED CROPPED ART FOR GUESS ${i} TO IMGUR`)
+								album[`guess${i + 1}Art`] = response.data.data.link
+							})
+							.catch(function (err) {
+								console.log(err);
+								return res.status(400).json(err);
+							});
+			})
+			.catch(function(err) {
+				console.log(err);
+				return res.status(400).json(err);
+			})
+		}
 		await Albums.create(album);
+		console.log("Art sent to client.");
+		console.log(album);
+		return res.status(200).json(album);
 	} catch (err) {
 		return res.status(400).json(err)
 	}
-	return res.status(200).json(album);
 });
 
 // Delete an existing album in the album table
