@@ -18,6 +18,9 @@ const getAlbumFromID = async (id) => {
 // Post a new album to the albums table
 router.post("/", async (req, res) => {
 	const album = req.body;
+
+	var errors = [];
+
 	try {
 		var doesAlbumExist = await Albums.findOne({ where: { albumID: album.albumID } });
 	} catch {
@@ -76,36 +79,40 @@ router.post("/", async (req, res) => {
 			.toBuffer()
 			.then(async (response) => {
 				console.log("Album Art cropped successfully.");
-							var data = new FormData();
-							await data.append('image', response);
 
-							console.log(data)
+				var data = new FormData();
+				data.append('image', response);
 
-							var axiosConfig = {
-								method: 'post',
-								url: 'https://api.imgur.com/3/image',
-								headers: { 
-									'Authorization': `Client-ID ${process.env.IMGUR_CLIENT_ID}`, 
-									...data.getHeaders()
-								},
-								data : data
-							};
+				var axiosConfig = {
+					method: 'post',
+					url: 'https://api.imgur.com/3/image',
+					headers: { 
+						'Authorization': `Client-ID ${process.env.IMGUR_CLIENT_ID}`, 
+						...data.getHeaders()
+					},
+					data : data
+				};
 
-							await axios(axiosConfig)
-							.then(function (response) {
-								console.log(`SUCCESSFULLY POSTED CROPPED ART FOR GUESS ${i} TO IMGUR`)
-								album[`guess${i + 1}Art`] = response.data.data.link
-							})
-							.catch(function (err) {
-								console.log(err);
-								return res.status(400).json(err);
-							});
+				await axios(axiosConfig)
+				.then(function (response) {
+					console.log(`SUCCESSFULLY UPLOADED CROPPED ART FOR GUESS ${i + 1} TO IMGUR`)
+					console.log(response.data.data.link);
+					album[`guess${i + 1}Art`] = response.data.data.link
+				})
+				.catch(function (err) {
+					console.log(`FAILED TO UPLOAD FOR CROPPED ART FOR GUESS ${i + 1} TO IMGUR`)
+					errors.push({ msg: `GUESS ${i + 1} ART UPLOAD TO IMGUR FAILED`, error: err });
+				});
 			})
 			.catch(function(err) {
 				console.log(err);
 				return res.status(400).json(err);
 			})
 		}
+		if(errors[0]) {
+			return res.status(400).json({errors: errors});
+		}
+
 		await Albums.create(album);
 		console.log("Art sent to client.");
 		console.log(album);
