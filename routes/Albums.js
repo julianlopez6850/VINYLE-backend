@@ -113,8 +113,9 @@ router.post("/", async (req, res) => {
 			return res.status(400).json({errors: errors});
 		}
 
-		await Albums.create(album);
-		console.log("Art sent to client.");
+		await Albums.create(album).then(() => {
+			console.log("Album saved to database.");
+		});
 		console.log(album);
 		return res.status(200).json(album);
 	} catch (err) {
@@ -170,64 +171,41 @@ router.get("/all", async (req, res) => {
 // (IMAGES IN ALBUMS TABLE MUST BE SAVED AS 300x300 for this request to work)
 router.get("/art", async (req, res) => {
 	const { id, guessNum } = req.query;
-
-	var cropPercentage = 1;
-
-	// change the crop percentage of the album art based on the guessNum passed through the request.
-	switch (guessNum) {
-		case '0':
-			cropPercentage = 1/10.0;
-			break;
-		case '1':
-			cropPercentage = 1/8.0;
-			break;
-		case '2':
-			cropPercentage = 1/6.5;
-			break;
-		case '3':
-			cropPercentage = 1/5.0;
-			break;
-		case '4':
-			cropPercentage = 1/3.5;
-			break;
-		case '5':
-			cropPercentage = 1/2.0;
-			break;
-		case '6':
-			cropPercentage = 1/1.0;
-			break;
-	}
-
-	var size = Math.ceil(300.0 * cropPercentage);
-	var fromTop = Math.floor(300.0 - size);
 	
 	var album;
 	if(isNaN(id))
-	{
-		album = await Albums.findOne({ where: { albumID: id } })
-	} else {
+		album = await Albums.findOne({ where: { albumID: id } });
+	else
 		album	= await getAlbumFromID(id);
+	
+	var art;
+
+	switch (guessNum) {
+		case '0':
+			art = album.dataValues.guess1Art;
+			break;
+		case '1':
+			art = album.dataValues.guess2Art;
+			break;
+		case '2':
+			art = album.dataValues.guess3Art;
+			break;
+		case '3':
+			art = album.dataValues.guess4Art;
+			break;
+		case '4':
+			art = album.dataValues.guess5Art;
+			break;
+		case '5':
+			art = album.dataValues.guess6Art;
+			break;
+		case '6':
+			art = album.dataValues.albumArt;
+			break;
 	}
 
-	console.log(album.albumArt)
-	const url = album.albumArt
-
-	// the following allows for the answer album to be cropped, saved into a file, and then sent back as a file through the response.
-	const response = await axios.get(url,  { responseType: 'arraybuffer' })
-	const buffer = Buffer.from(response.data, "utf-8")
-	await sharp(buffer)
-	.extract({ width: size, height: size, left: 0, top: fromTop})
-	.resize(300, 300)
-	.toFile(`./albumArt/answer.png`)
-	.then(response => {
-		console.log("Album Art cropped successfully.");
-	})
-	.catch(function(err) {
-		console.log(err)
-	})
-
 	console.log("Art sent to client.");
-	res.status(200).sendFile('albumArt/answer.png', { root: path.join(__dirname, '..')})
+	return res.status(200).json({artURL: art});
 });
 
 // Compare the guess album with the answer album.
