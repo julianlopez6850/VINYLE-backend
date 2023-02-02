@@ -106,20 +106,20 @@ router.post("/", async (req, res) => {
 			})
 			.catch(function(err) {
 				console.log(err);
-				return res.status(400).json(err);
+				return res.status(400).json({ error: err });
 			})
 		}
 		if(errors[0]) {
-			return res.status(400).json({errors: errors});
+			return res.status(400).json({ errors: errors });
 		}
 
 		await Albums.create(album).then(() => {
 			console.log("Album saved to database.");
 		});
 		console.log(album);
-		return res.status(200).json(album);
+		return res.status(200).json({ success: true, album: album });
 	} catch (err) {
-		return res.status(400).json(err)
+		return res.status(400).json({ error: err })
 	}
 });
 
