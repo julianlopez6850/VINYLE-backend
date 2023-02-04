@@ -6,6 +6,7 @@ const sharp = require('sharp');
 var path = require('path');
 const axios = require('axios');
 var FormData = require('form-data');
+const sequelize = require('sequelize');
 
 // This method is used to choose an answer album using a random integer.
 const getAlbumFromID = async (id) => {
@@ -113,12 +114,23 @@ router.post("/", async (req, res) => {
 			return res.status(400).json({ errors: errors });
 		}
 
+		var artistsString = "";
+
+		album.artists.forEach((artist, index) => {
+			if(index !== 0)
+			artistsString += ", ";
+			artistsString += artist;
+		})
+
+		album.artistsString = artistsString;
+
 		await Albums.create(album).then(() => {
 			console.log("Album saved to database.");
 		});
 		console.log(album);
 		return res.status(200).json({ success: true, album: album });
 	} catch (err) {
+		console.log(err);
 		return res.status(400).json({ error: err })
 	}
 });
@@ -160,7 +172,7 @@ router.get("/", async (req, res) => {
 router.get("/all", async (req, res) => {
 	const listOfAlbums = await Albums.findAll({
 		order: [
-			['artists', 'ASC'], 
+			['artistsString', 'ASC'], 
 			['albumName', 'ASC']
 		]
 	});

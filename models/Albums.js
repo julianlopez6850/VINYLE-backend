@@ -41,6 +41,10 @@ module.exports = (sequelize, DataTypes) => {
 			type: DataTypes.JSON,
 			allowNull: false,
 		},
+		artistsString: {
+			type: DataTypes.STRING,
+			allowNull: false,
+		},
 		releaseYear: {
 			type: DataTypes.NUMERIC,
 			allowNull: false,
