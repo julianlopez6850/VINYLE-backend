@@ -7,6 +7,8 @@ var path = require('path');
 const axios = require('axios');
 var FormData = require('form-data');
 const sequelize = require('sequelize');
+const bcrypt = require("bcrypt");
+var fs = require("fs");
 
 // This method is used to choose an answer album using a random integer.
 const getAlbumFromID = async (id) => {
@@ -135,6 +137,92 @@ router.post("/", async (req, res) => {
 	}
 });
 
+
+router.post("/art", async (req, res) => {
+	const { id } = req.body;
+
+	if(id === undefined) {
+		res.status(400).json({error: "Request body must contain 'id'."})
+	}
+
+	var existingAlbum = await Albums.findOne({ where: { albumID: id } });
+	/*
+	if(existingAlbum)
+	{
+		return res.status(400).json({ error: "That album is already stored in the albums table" })
+	}
+	*/
+
+	try {
+		if (!fs.existsSync(`albumArt/${id}`)) {
+			fs.mkdirSync(`albumArt/${id}`);
+			console.log(`Created new directory /${id}.`);
+		} else {
+			console.log(`Directory /${id} already exists.`);
+			return res.status(400).json({ error: "That album already has its art stored." })
+		}
+	} catch (err) {
+		console.error(err);
+	}
+	try {
+		// cycle through possible guessNum values
+		for(var i = 0; i < 6; i++) {
+
+			// change the crop percentage of the album art based on guessNum.
+			var cropPercentage = 1;
+			switch (i) {
+				case 0:
+					cropPercentage = 1/10.0;
+					break;
+				case 1:
+					cropPercentage = 1/8.0;
+					break;
+				case 2:
+					cropPercentage = 1/6.5;
+					break;
+				case 3:
+					cropPercentage = 1/5.0;
+					break;
+				case 4:
+					cropPercentage = 1/3.5;
+					break;
+				case 5:
+					cropPercentage = 1/2.0;
+					break;
+			}
+
+			var size = Math.ceil(300.0 * cropPercentage);
+			var fromTop = Math.floor(300.0 - size);
+		
+			console.log("Album Art: " + existingAlbum.albumArt + ", numGuesses : " + i);
+			const url = existingAlbum.albumArt
+			await bcrypt.hash(i.toString(), 10).then(async (hash) => {
+				hash = hash.replace(/\//g, "SlashSlash");
+
+				// the following allows for the answer album to be cropped, saved into a file, and then sent back as a file through the response.
+				const response = await axios.get(url,  { responseType: 'arraybuffer' })
+				const buffer = Buffer.from(response.data, "utf-8")
+				await sharp(buffer)
+				.extract({ width: size, height: size, left: 0, top: fromTop})
+				.resize(300, 300)
+				.toFile(`./albumArt/${id}/${hash}.png`)
+				.then(response => {
+					console.log("Album Art Cropped and Saved to File Successfully.");
+				})
+				.catch(function(err) {
+					console.log(err)
+					return res.status(200).json({success: false, error: err});
+				})
+				
+			});
+		}
+	} catch (err) {
+		console.log(err);
+		return res.status(400).json({ error: err })
+	}
+	return res.status(200).json({success: true, message: "All Art Images Successfully Saved."});
+});
+
 // Delete an existing album in the album table
 router.delete("/",  async (req, res) => {
 	const { id } = req.query;
@@ -184,40 +272,42 @@ router.get("/all", async (req, res) => {
 router.get("/art", async (req, res) => {
 	const { id, guessNum } = req.query;
 	
-	var album;
-	if(isNaN(id))
-		album = await Albums.findOne({ where: { albumID: id } });
-	else
-		album	= await getAlbumFromID(id);
-	
-	var art;
-
-	switch (guessNum) {
-		case '0':
-			art = album.dataValues.guess1Art;
-			break;
-		case '1':
-			art = album.dataValues.guess2Art;
-			break;
-		case '2':
-			art = album.dataValues.guess3Art;
-			break;
-		case '3':
-			art = album.dataValues.guess4Art;
-			break;
-		case '4':
-			art = album.dataValues.guess5Art;
-			break;
-		case '5':
-			art = album.dataValues.guess6Art;
-			break;
-		case '6':
-			art = album.dataValues.albumArt;
-			break;
+	if(id === undefined) { 
+		res.status(400).json({ error: "id cannot be undefined." })
+	}
+	if(guessNum === undefined) { 
+		res.status(400).json({ error: "guessNum cannot be undefined." })
 	}
 
-	console.log("Art sent to client.");
-	return res.status(200).json({artURL: art});
+	var existingAlbum;
+	if(isNaN(id))
+		existingAlbum = await Albums.findOne({ where: { albumID: id } });
+	else
+		existingAlbum	= await getAlbumFromID(id);
+
+	if(!existingAlbum)
+		return res.status(400).json({ error: "There is no album associated with the id provided in the request." });
+
+	const directories = fs.readdirSync(`./albumArt/${existingAlbum.albumID}`);
+	console.log(directories);
+
+	directories.forEach(async (directory, index) => {
+		await bcrypt.compare(guessNum, directory.replace(/SlashSlash/g, "/").slice(0, -4))
+		.then((match) => {
+			console.log(directory.slice(0, -4));
+			if (match) {
+				console.log("Art sent to client.");
+				return res.status(200).sendFile(`albumArt/${existingAlbum.albumID}/${directory}`, { root: path.join(__dirname, '..')});
+			} else {
+				console.log("no match")
+				if(index === directories.length)
+					return res.status(400).json({ error: `No png file found for the art pertaining to id: ${id} and guessNum: ${guessNum}.` })
+			}
+		})
+		.catch(function(err) {
+			return res.status(400).json({ error: err });
+		});
+	});
 });
 
 // Compare the guess album with the answer album.
