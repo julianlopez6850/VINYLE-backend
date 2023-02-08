@@ -137,7 +137,6 @@ router.post("/", async (req, res) => {
 	}
 });
 
-
 router.post("/art", async (req, res) => {
 	const { id } = req.body;
 
@@ -145,20 +144,19 @@ router.post("/art", async (req, res) => {
 		res.status(400).json({error: "Request body must contain 'id'."})
 	}
 
-	var existingAlbum = await Albums.findOne({ where: { albumID: id } });
-	/*
-	if(existingAlbum)
-	{
-		return res.status(400).json({ error: "That album is already stored in the albums table" })
-	}
-	*/
+	var existingAlbum;
+	if(isNaN(id))
+		existingAlbum = await Albums.findOne({ where: { albumID: id } });
+	else
+		existingAlbum	= await getAlbumFromID(id);
 
+	console.log(existingAlbum)
 	try {
-		if (!fs.existsSync(`albumArt/${id}`)) {
-			fs.mkdirSync(`albumArt/${id}`);
-			console.log(`Created new directory /${id}.`);
+		if (!fs.existsSync(`albumArt/${existingAlbum.albumID}`)) {
+			fs.mkdirSync(`albumArt/${existingAlbum.albumID}`);
+			console.log(`Created new directory /${existingAlbum.albumID}.`);
 		} else {
-			console.log(`Directory /${id} already exists.`);
+			console.log(`Directory /${existingAlbum.albumID} already exists.`);
 			return res.status(400).json({ error: "That album already has its art stored." })
 		}
 	} catch (err) {
@@ -166,7 +164,7 @@ router.post("/art", async (req, res) => {
 	}
 	try {
 		// cycle through possible guessNum values
-		for(var i = 0; i < 6; i++) {
+		for(var i = 0; i <= 6; i++) {
 
 			// change the crop percentage of the album art based on guessNum.
 			var cropPercentage = 1;
@@ -189,6 +187,9 @@ router.post("/art", async (req, res) => {
 				case 5:
 					cropPercentage = 1/2.0;
 					break;
+				case 6:
+					cropPercentage = 1/1.0;
+					break;
 			}
 
 			var size = Math.ceil(300.0 * cropPercentage);
@@ -205,7 +206,7 @@ router.post("/art", async (req, res) => {
 				await sharp(buffer)
 				.extract({ width: size, height: size, left: 0, top: fromTop})
 				.resize(300, 300)
-				.toFile(`./albumArt/${id}/${hash}.png`)
+				.toFile(`./albumArt/${existingAlbum.albumID}/${hash}.png`)
 				.then(response => {
 					console.log("Album Art Cropped and Saved to File Successfully.");
 				})
@@ -219,6 +220,86 @@ router.post("/art", async (req, res) => {
 	} catch (err) {
 		console.log(err);
 		return res.status(400).json({ error: err })
+	}
+	return res.status(200).json({success: true, message: "All Art Images Successfully Saved."});
+});
+
+router.post("/allArt", async (req, res) => {
+	
+	var albums = await Albums.findAll();
+	for(var i = 0; i < albums.length; i++) {
+		console.log(i)
+		existingAlbum	= await getAlbumFromID(i);
+
+		try {
+			if (!fs.existsSync(`albumArt/${existingAlbum.albumID}`)) {
+				fs.mkdirSync(`albumArt/${existingAlbum.albumID}`);
+				console.log(`Created new directory /${existingAlbum.albumID}.`);
+			} else {
+				console.log(`Directory /${existingAlbum.albumID} already exists.`);
+				continue;
+			}
+		} catch (err) {
+			console.error(err);
+		}
+		try {
+			// cycle through possible guessNum values
+			for(var i = 0; i <= 6; i++) {
+	
+				// change the crop percentage of the album art based on guessNum.
+				var cropPercentage = 1;
+				switch (i) {
+					case 0:
+						cropPercentage = 1/10.0;
+						break;
+					case 1:
+						cropPercentage = 1/8.0;
+						break;
+					case 2:
+						cropPercentage = 1/6.5;
+						break;
+					case 3:
+						cropPercentage = 1/5.0;
+						break;
+					case 4:
+						cropPercentage = 1/3.5;
+						break;
+					case 5:
+						cropPercentage = 1/2.0;
+						break;
+					case 6:
+						cropPercentage = 1/1.0;
+						break;
+				}
+	
+				var size = Math.ceil(300.0 * cropPercentage);
+				var fromTop = Math.floor(300.0 - size);
+			
+				console.log("Album Art: " + existingAlbum.albumArt + ", numGuesses : " + i);
+				const url = existingAlbum.albumArt
+				await bcrypt.hash(i.toString(), 10).then(async (hash) => {
+					hash = hash.replace(/\//g, "SlashSlash");
+	
+					// the following allows for the answer album to be cropped, saved into a file, and then sent back as a file through the response.
+					const response = await axios.get(url,  { responseType: 'arraybuffer' })
+					const buffer = Buffer.from(response.data, "utf-8")
+					await sharp(buffer)
+					.extract({ width: size, height: size, left: 0, top: fromTop})
+					.resize(300, 300)
+					.toFile(`./albumArt/${existingAlbum.albumID}/${hash}.png`)
+					.then(response => {
+						console.log("Album Art Cropped and Saved to File Successfully.");
+					})
+					.catch(function(err) {
+						console.log(err)
+						return res.status(400).json({success: false, error: err});
+					});
+				});
+			}
+		} catch (err) {
+			console.log(err);
+			return res.status(400).json({ error: err })
+		}
 	}
 	return res.status(200).json({success: true, message: "All Art Images Successfully Saved."});
 });
@@ -289,25 +370,24 @@ router.get("/art", async (req, res) => {
 		return res.status(400).json({ error: "There is no album associated with the id provided in the request." });
 
 	const directories = fs.readdirSync(`./albumArt/${existingAlbum.albumID}`);
-	console.log(directories);
 
-	directories.forEach(async (directory, index) => {
-		await bcrypt.compare(guessNum, directory.replace(/SlashSlash/g, "/").slice(0, -4))
+	for(var i = 0; i < directories.length; i++) {
+		await bcrypt.compare(guessNum, directories[i].replace(/SlashSlash/g, "/").slice(0, -4))
 		.then((match) => {
-			console.log(directory.slice(0, -4));
 			if (match) {
-				console.log("Art sent to client.");
-				return res.status(200).sendFile(`albumArt/${existingAlbum.albumID}/${directory}`, { root: path.join(__dirname, '..')});
+				res.status(200).sendFile(`albumArt/${existingAlbum.albumID}/${directories[i]}`, { root: path.join(__dirname, '..')});
+				i = directories.length;
+				return;
 			} else {
-				console.log("no match")
-				if(index === directories.length)
+				if(i === directories.length - 1)
 					return res.status(400).json({ error: `No png file found for the art pertaining to id: ${id} and guessNum: ${guessNum}.` })
 			}
 		})
 		.catch(function(err) {
+			console.log(`Error retrieving art for id: ${id}, guessNum: ${guessNum}`)
 			return res.status(400).json({ error: err });
 		});
-	});
+	};
 });
 
 // Compare the guess album with the answer album.

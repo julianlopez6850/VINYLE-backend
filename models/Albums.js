@@ -13,30 +13,6 @@ module.exports = (sequelize, DataTypes) => {
 			type: DataTypes.STRING,
 			allowNull: false,
 		},
-		guess1Art: {
-			type: DataTypes.STRING,
-			allowNull: false,
-		},
-		guess2Art: {
-			type: DataTypes.STRING,
-			allowNull: false,
-		},
-		guess3Art: {
-			type: DataTypes.STRING,
-			allowNull: false,
-		},
-		guess4Art: {
-			type: DataTypes.STRING,
-			allowNull: false,
-		},
-		guess5Art: {
-			type: DataTypes.STRING,
-			allowNull: false,
-		},
-		guess6Art: {
-			type: DataTypes.STRING,
-			allowNull: false,
-		},
 		artists: {
 			type: DataTypes.JSON,
 			allowNull: false,
