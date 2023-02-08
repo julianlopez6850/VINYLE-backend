@@ -228,7 +228,7 @@ router.post("/allArt", async (req, res) => {
 	
 	var albums = await Albums.findAll();
 	for(var i = 0; i < albums.length; i++) {
-		console.log(i)
+		console.log("#" + i + ":\tid: " + albums[i].dataValues.albumID + ":\t Album: " + albums[i].dataValues.albumName + "\n");
 		existingAlbum	= await getAlbumFromID(i);
 
 		try {
@@ -250,22 +250,22 @@ router.post("/allArt", async (req, res) => {
 				var cropPercentage = 1;
 				switch (i) {
 					case 0:
-						cropPercentage = 1/10.0;
-						break;
-					case 1:
-						cropPercentage = 1/8.0;
-						break;
-					case 2:
 						cropPercentage = 1/6.5;
 						break;
+					case 1:
+						cropPercentage = 1/4.0;
+						break;
+					case 2:
+						cropPercentage = 1/3.0;
+						break;
 					case 3:
-						cropPercentage = 1/5.0;
+						cropPercentage = 1/2.0;
 						break;
 					case 4:
-						cropPercentage = 1/3.5;
+						cropPercentage = 1/1.66;
 						break;
 					case 5:
-						cropPercentage = 1/2.0;
+						cropPercentage = 1/1.33;
 						break;
 					case 6:
 						cropPercentage = 1/1.0;
