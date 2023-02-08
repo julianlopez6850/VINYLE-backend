@@ -244,11 +244,11 @@ router.post("/allArt", async (req, res) => {
 		}
 		try {
 			// cycle through possible guessNum values
-			for(var i = 0; i <= 6; i++) {
+			for(var j = 0; j <= 6; j++) {
 	
 				// change the crop percentage of the album art based on guessNum.
 				var cropPercentage = 1;
-				switch (i) {
+				switch (j) {
 					case 0:
 						cropPercentage = 1/6.5;
 						break;
@@ -275,9 +275,9 @@ router.post("/allArt", async (req, res) => {
 				var size = Math.ceil(300.0 * cropPercentage);
 				var fromTop = Math.floor(300.0 - size);
 			
-				console.log("Album Art: " + existingAlbum.albumArt + ", numGuesses : " + i);
+				console.log("Album Art: " + existingAlbum.albumArt + ", numGuesses : " + j);
 				const url = existingAlbum.albumArt
-				await bcrypt.hash(i.toString(), 10).then(async (hash) => {
+				await bcrypt.hash(j.toString(), 10).then(async (hash) => {
 					hash = hash.replace(/\//g, "SlashSlash");
 	
 					// the following allows for the answer album to be cropped, saved into a file, and then sent back as a file through the response.
