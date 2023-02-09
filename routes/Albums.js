@@ -137,11 +137,12 @@ router.post("/", async (req, res) => {
 	}
 });
 
+// Post new album art image files for each guessNum for the specified album ID.
 router.post("/art", async (req, res) => {
 	const { id } = req.body;
 
 	if(id === undefined) {
-		res.status(400).json({error: "Request body must contain 'id'."})
+		return res.status(400).json({error: "Request body must contain 'id'."})
 	}
 
 	var existingAlbum;
@@ -150,7 +151,6 @@ router.post("/art", async (req, res) => {
 	else
 		existingAlbum	= await getAlbumFromID(id);
 
-	console.log(existingAlbum)
 	try {
 		if (!fs.existsSync(`albumArt/${existingAlbum.albumID}`)) {
 			fs.mkdirSync(`albumArt/${existingAlbum.albumID}`);
@@ -161,6 +161,7 @@ router.post("/art", async (req, res) => {
 		}
 	} catch (err) {
 		console.error(err);
+		return res.status(400).json({ error: err });
 	}
 	try {
 		// cycle through possible guessNum values
@@ -170,22 +171,22 @@ router.post("/art", async (req, res) => {
 			var cropPercentage = 1;
 			switch (i) {
 				case 0:
-					cropPercentage = 1/10.0;
-					break;
-				case 1:
-					cropPercentage = 1/8.0;
-					break;
-				case 2:
 					cropPercentage = 1/6.5;
 					break;
+				case 1:
+					cropPercentage = 1/4.0;
+					break;
+				case 2:
+					cropPercentage = 1/3.0;
+					break;
 				case 3:
-					cropPercentage = 1/5.0;
+					cropPercentage = 1/2.0;
 					break;
 				case 4:
-					cropPercentage = 1/3.5;
+					cropPercentage = 1/1.66;
 					break;
 				case 5:
-					cropPercentage = 1/2.0;
+					cropPercentage = 1/1.33;
 					break;
 				case 6:
 					cropPercentage = 1/1.0;
@@ -224,6 +225,167 @@ router.post("/art", async (req, res) => {
 	return res.status(200).json({success: true, message: "All Art Images Successfully Saved."});
 });
 
+// Replace image file for specified album ID and guessNum 
+router.put("/art/guess", async (req, res) => {
+	const { id, guessNum, pxFromTop, pxFromLeft } = req.body;
+
+	if(id === undefined) {
+		return res.status(400).json({error: "Request body must contain 'id'."})
+	}
+	if(!Number.isInteger(guessNum) || guessNum < 0 || guessNum > 6) {
+		return res.status(400).json({error: "guessNum must be passed as an integer between 0 and 6 (inclusive)."})
+	}
+
+	var existingAlbum;
+	if(isNaN(id))
+		existingAlbum = await Albums.findOne({ where: { albumID: id } });
+	else
+		existingAlbum	= await getAlbumFromID(id);
+
+	try {
+		if (!fs.existsSync(`albumArt/${existingAlbum.albumID}`)) {
+			console.log(`Directory /albumArt/${existingAlbum.albumID} not found.`);
+			return res.status(400).json({ error: "The directory for this album ID was not found. You must first make a POST /albums/art request with this album ID before making this request." });
+		}
+	} catch (err) {
+		console.error(err);
+		return res.status(400).json({ error: err });
+	}
+	try {
+		// cycle through possible guessNum values
+		for(var i = 0; i <= 6; i++) {
+			if(guessNum !== undefined && i !== guessNum)
+				continue;
+
+			// change the crop percentage of the album art based on guessNum.
+			var cropPercentage = 1;
+			switch (i) {
+				case 0:
+					cropPercentage = 1/6.5;
+					break;
+				case 1:
+					cropPercentage = 1/4.0;
+					break;
+				case 2:
+					cropPercentage = 1/3.0;
+					break;
+				case 3:
+					cropPercentage = 1/2.0;
+					break;
+				case 4:
+					cropPercentage = 1/1.66;
+					break;
+				case 5:
+					cropPercentage = 1/1.33;
+					break;
+				case 6:
+					cropPercentage = 1/1.0;
+					break;
+			}
+
+			var size = Math.ceil(300.0 * cropPercentage);
+			var fromTop = Math.floor(300.0 - size);
+			var fromLeft = 0;
+
+			if(pxFromTop !== undefined && pxFromTop !== null)
+				fromTop = pxFromTop;
+			if(pxFromLeft !== undefined && pxFromLeft !== null)
+				fromLeft = pxFromLeft;
+
+			if(fromLeft + size > 300 || fromTop + size > 300) {
+				console.log("Bad positioning & size. Cannot extract image file correctly.");
+				return res.status(400).json({ error: "Bad positioning & size. Cannot extract image file correctly." })
+			}
+
+			console.log("Album Art: " + existingAlbum.albumArt + ", numGuesses : " + i);
+			const url = existingAlbum.albumArt
+
+			const directories = fs.readdirSync(`./albumArt/${existingAlbum.albumID}`);
+
+			// REMOVE OLD ALBUM ART IMAGE FOR guessNum.
+			for(var j = 0; j < directories.length; j++) {
+				await bcrypt.compare(guessNum.toString(), directories[j].replace(/SlashSlash/g, "/").slice(0, -4))
+				.then((match) => {
+					if (match) {
+						fs.unlinkSync(`albumArt/${existingAlbum.albumID}/${directories[j]}`);
+						console.log(`Removed file: /albumArt/${existingAlbum.albumID}/${directories[j]}`);
+						j = directories.length;
+						return;
+					} else {
+						if(j === directories.length - 1)
+							return res.status(400).json({ error: `No png file found for the art pertaining to id: ${id} and guessNum: ${guessNum}.` })
+					}
+				})
+				.catch(function(err) {
+					console.log(`(PUT /albums/art/guess) Error Removing old art for id: ${id}, guessNum: ${guessNum}`);
+					console.log(err);
+					return res.status(400).json({ error: err });
+				});
+			}
+
+			const newDirectories = fs.readdirSync(`./albumArt/${existingAlbum.albumID}`);
+			if(directories.length === newDirectories.length) {
+				return res.status(400).json({ error: `Error Removing old art for id: ${id}, guessNum: ${guessNum}` });
+			}
+
+			// SAVE NEW ALBUM ART IMAGE FOR guessNum.
+			await bcrypt.hash(i.toString(), 10).then(async (hash) => {
+				hash = hash.replace(/\//g, "SlashSlash");
+
+				// the following allows for the answer album to be cropped, saved into a file, and then sent back as a file through the response.
+				const response = await axios.get(url,  { responseType: 'arraybuffer' })
+				const buffer = Buffer.from(response.data, "utf-8")
+				await sharp(buffer)
+				.extract({ width: size, height: size, left: fromLeft, top: fromTop})
+				.resize(300, 300)
+				.toFile(`./albumArt/${existingAlbum.albumID}/${hash}.png`)
+				.then(response => {
+					console.log(`Replaced with /albumArt/${existingAlbum.albumID}/${hash}.png`);
+				})
+				.catch(function(err) {
+					console.log(`(PUT /albums/art/guess) Error Creating new art for id: ${id}, guessNum: ${guessNum}`);
+					console.log(err);
+					return res.status(400).json({ error: err });
+				})
+			});
+		}
+	} catch (err) {
+		console.log(err);
+		return res.status(400).json({ error: err })
+	}
+	return res.status(200).json({success: true, message: `Successfully replaced image file for album ID: ${id}, guessNum: ${guessNum}.`});
+});
+
+// Delete all album art image files for specified album ID.
+router.delete("/art", async (req, res) => {
+	const { id } = req.body;
+
+	if(id === undefined) {
+		return res.status(400).json({error: "Request body must contain 'id'."})
+	}
+
+	var existingAlbum;
+	if(isNaN(id))
+		existingAlbum = await Albums.findOne({ where: { albumID: id } });
+	else
+		existingAlbum	= await getAlbumFromID(id);
+
+	try {
+		if (!fs.existsSync(`albumArt/${existingAlbum.albumID}`)) {
+			console.log(`Directory /albumArt/${existingAlbum.albumID} not found.`);
+			return res.status(400).json({ error: "The directory for this album ID was not found. (Nothing to delete)." });
+		} else {
+			fs.rmSync(`albumArt/${existingAlbum.albumID}`, { recursive: true, force: true });
+			console.log(`Removed directory: /albumArt/${existingAlbum.albumID}`);
+			return res.status(200).json({success: true, message: `Successfully deleted all image files for album ID: ${id}.`});
+		}
+	} catch (err) {
+		console.error(err);
+		return res.status(400).json({ error: err });
+	}
+});
+
+// Post new album art image files for each guessNum for every album stored in the albums table.
 router.post("/allArt", async (req, res) => {
 	
 	var albums = await Albums.findAll();
@@ -241,6 +403,7 @@ router.post("/allArt", async (req, res) => {
 			}
 		} catch (err) {
 			console.error(err);
+			return res.status(400).json({ error: err });
 		}
 		try {
 			// cycle through possible guessNum values
