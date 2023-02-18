@@ -7,6 +7,20 @@ const sequelize = require('sequelize');
 // Get all of the games played
 router.get("/all", async (req, res) => {
 	const listOfGames = await Games.findAll();
+
+	listOfGames.forEach((game, index) => {
+		game.guesses = JSON.parse(game.guesses);
+	})
+
+	/*	Get Album Info For Each Game In List (Hundreds of Requests, Not Recommended)
+	for(const game of listOfGames) {
+		game.dataValues.guesses = JSON.parse(game.dataValues.guesses);
+		const album = await Albums.findOne({ where: { albumID: game.dataValues.albumID } })
+		album.artists = JSON.parse(album.artists);
+		game.dataValues.album = album;
+	}
+	*/
+
 	res.json(listOfGames);
 });
 
@@ -34,6 +48,9 @@ router.post("/", validateToken, async (req, res) => {
 
 	try {
 		const newGame = req.body;
+
+		newGame.guesses = JSON.stringify(newGame.guesses);
+
 		await Games.create(newGame);
 		return res.status(200).json({ message: "Successfully added new game.", game: newGame });
 	} catch (err) {
@@ -80,7 +97,9 @@ router.get("/user/hasGame", validateToken, async (req, res) => {
 		return res.status(200).json({ value: false, message: `No games found for { user: ${username}${(mode) ? `, mode: ${mode}` : ``}${(date) ? `, date: ${date}` : ``} }` })
 
 	for(const game of listOfGames) {
+		game.dataValues.guesses = JSON.parse(game.dataValues.guesses);
 		const album = await Albums.findOne({ where: { albumID: game.dataValues.albumID } })
+		album.artists = JSON.parse(album.artists);
 		game.dataValues.album = album;
 	}
 

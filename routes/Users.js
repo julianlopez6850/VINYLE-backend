@@ -21,7 +21,7 @@ router.post("/register", async (req, res) => {
 			Users.create({
 				username: username,
 				password: hash,
-				settings: { darkTheme: true, colorblindMode: false, difficulty: 0 }
+				settings: JSON.stringify({ darkTheme: true, colorblindMode: false, difficulty: 0 })
 			});
 			return res.status(200).json({ success: "Successfully created new user: " + username, username: username, password: password });
 		});
@@ -75,6 +75,7 @@ router.post("/logout", async (req, res) => {
 // Check if a user is logged in, and who that user is.
 router.get("/profile", validateToken, async (req, res) => {
 	const user = await Users.findOne({ where: { username: req.username } });
+	user.settings = JSON.parse(user.settings);
 	res.status(200).json({ success: "User authenticated.", username: req.username, settings: user.settings })
 });
 
@@ -87,7 +88,7 @@ router.put("/settings", validateToken, (req, res) => {
 		return res.status(400).json({ error: "Settings cannot be undefined" });
 
 	Users.update(
-		{ settings: settings },
+		{ settings: JSON.stringify(settings) },
 		{ where: { username: username } }
 	).then(() => {
 		return res.status(200).json({ success: "User settings updated." })

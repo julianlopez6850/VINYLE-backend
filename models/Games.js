@@ -26,8 +26,8 @@ module.exports = (sequelize, DataTypes) => {
 			allowNull: false,
 		},
 		guesses: {
-			type: DataTypes.JSON,
-			allowNull: true,
+			type: DataTypes.TEXT('long'),
+			allowNull: false,
 		},
 	})
 

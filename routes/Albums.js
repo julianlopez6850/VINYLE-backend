@@ -42,6 +42,8 @@ router.post("/", async (req, res) => {
 
 		album.artistsString = artistsString;
 
+		album.artists = JSON.stringify(album.artists);
+
 		await Albums.create(album).then(() => {
 			console.log("Album saved to database.");
 		});
@@ -403,6 +405,7 @@ router.get("/", async (req, res) => {
 	{
 		await Albums.findOne({ where: { albumID: id } })
 			.then((response) => {
+				response.artists = JSON.parse(response.artists);
 				if(response)
 					return res.status(200).json({ album: response })
 				else
@@ -412,6 +415,7 @@ router.get("/", async (req, res) => {
 	else
 	{
 		const album = await getAlbumFromID(id);
+		album.artists = JSON.parse(album.artists);
 		return res.status(200).json({ album: album });
 	}
 });
@@ -424,6 +428,9 @@ router.get("/all", async (req, res) => {
 			['albumName', 'ASC']
 		]
 	});
+	listOfAlbums.forEach((album, index) => {
+		album.artists = JSON.parse(album.artists);
+	})
 	res.status(200).json(listOfAlbums);
 });
 

@@ -14,7 +14,7 @@ module.exports = (sequelize, DataTypes) => {
 			allowNull: false,
 		},
 		artists: {
-			type: DataTypes.JSON,
+			type: DataTypes.STRING,
 			allowNull: false,
 		},
 		artistsString: {
@@ -24,10 +24,6 @@ module.exports = (sequelize, DataTypes) => {
 		releaseYear: {
 			type: DataTypes.NUMERIC,
 			allowNull: false,
-		},
-		genres: {
-			type: DataTypes.JSON,
-			allowNull: true,
 		},
 	})
 
