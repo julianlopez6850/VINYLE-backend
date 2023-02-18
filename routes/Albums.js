@@ -22,8 +22,6 @@ const getAlbumFromID = async (id) => {
 router.post("/", async (req, res) => {
 	const album = req.body;
 
-	var errors = [];
-
 	try {
 		var doesAlbumExist = await Albums.findOne({ where: { albumID: album.albumID } });
 	} catch {
@@ -34,88 +32,6 @@ router.post("/", async (req, res) => {
 		return res.status(400).json({ error: "That album is already stored in the albums table" })
 	}
 	try {
-		// cycle through possible guessNum values
-		for(var i = 0; i < 6; i++) {
-
-			// change the crop percentage of the album art based on guessNum.
-			var cropPercentage = 1;
-			switch (i) {
-				case 0:
-					cropPercentage = 1/10.0;
-					break;
-				case 1:
-					cropPercentage = 1/8.0;
-					break;
-				case 2:
-					cropPercentage = 1/6.5;
-					break;
-				case 3:
-					cropPercentage = 1/5.0;
-					break;
-				case 4:
-					cropPercentage = 1/3.5;
-					break;
-				case 5:
-					cropPercentage = 1/2.0;
-					break;
-			}
-
-			var size = Math.ceil(300.0 * cropPercentage);
-			var fromTop = Math.floor(300.0 - size);
-		
-			console.log("Album Art: " + album.albumArt + ", numGuesses : " + i);
-			const url = album.albumArt
-		
-			// the following allows for the answer album to be cropped, saved into a buffer, stored onto Imgur, and have the resulting link saved into the albums table.
-			const response = await axios.get(url,  { responseType: 'arraybuffer' })
-			.catch(function (error) {
-				console.log(error);
-				return res.status(400).json(error);
-			});
-			if(!response.data) {
-				return;
-			}
-			const buffer = Buffer.from(response.data, "utf-8")
-			await sharp(buffer)
-			.extract({ width: size, height: size, left: 0, top: fromTop})
-			.resize(300, 300)
-			.toBuffer()
-			.then(async (response) => {
-				console.log("Album Art cropped successfully.");
-
-				var data = new FormData();
-				data.append('image', response);
-
-				var axiosConfig = {
-					method: 'post',
-					url: 'https://api.imgur.com/3/image',
-					headers: { 
-						'Authorization': `Client-ID ${process.env.IMGUR_CLIENT_ID}`, 
-						...data.getHeaders()
-					},
-					data : data
-				};
-
-				await axios(axiosConfig)
-				.then(function (response) {
-					console.log(`SUCCESSFULLY UPLOADED CROPPED ART FOR GUESS ${i + 1} TO IMGUR`)
-					console.log(response.data.data.link);
-					album[`guess${i + 1}Art`] = response.data.data.link
-				})
-				.catch(function (err) {
-					console.log(`FAILED TO UPLOAD FOR CROPPED ART FOR GUESS ${i + 1} TO IMGUR`)
-					errors.push({ msg: `GUESS ${i + 1} ART UPLOAD TO IMGUR FAILED`, error: err });
-				});
-			})
-			.catch(function(err) {
-				console.log(err);
-				return res.status(400).json({ error: err });
-			})
-		}
-		if(errors[0]) {
-			return res.status(400).json({ errors: errors });
-		}
-
 		var artistsString = "";
 
 		album.artists.forEach((artist, index) => {
